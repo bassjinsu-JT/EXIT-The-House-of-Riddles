@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>수수께끼의 집</title>
+<style>
+  :root{
+    --bg:#0d0f14;
+    --accent:#c9a227;
+    --danger:#c0392b;
+    --blue:#1a5fb4;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:var(--bg);
+    font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    overflow:hidden;
+    user-select:none;
+    display:flex;
+    flex-direction:column;
+  }
+  #app{ position:relative; width:100vw; height:calc(100vh - 52px); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .stage{ position:relative; width:100%;height:100%; display:none; }
+  .stage.active{display:flex;}
+
+  .fullimg{ position:relative; height:100%; max-width:100%; margin:0 auto; }
+  .fullimg img{height:100%;width:auto;display:block;}
+
+  .hotspot{ position:absolute; cursor:pointer; border-radius:8px; }
+  .hotspot:hover{ box-shadow:0 0 0 3px rgba(255,255,255,.4) inset; }
+  .hotspot.hidden{display:none;}
+  .hint{ position:absolute; bottom:16px; left:50%; transform:translateX(-50%); color:#eee; font-size:13px; opacity:.65; }
+
+  .split{width:100%;height:100%;display:flex;}
+  .split-left{ position:relative; width:50%; height:100%; background:#000; display:flex;align-items:center;justify-content:center; overflow:hidden;}
+  .split-left .imgbox{position:relative; height:100%;}
+  .split-left img{height:100%;width:auto;display:block;}
+  .split-right{ width:50%; height:100%; background:linear-gradient(180deg,#15171c,#1f2229); color:#e9e6da; padding:4% 6% 6% 6%; position:relative; overflow:hidden; font-size:1.0vw; line-height:1.85; }
+  .narration{ position:absolute; left:6%; right:6%; bottom:2%; display:flex; flex-direction:column; gap:14px; }
+  .narration p{ margin:0; opacity:0; transform:translateY(5px); transition:opacity .8s ease, transform 3s ease; }
+  .narration p.show{opacity:1; transform:translateY(0);}
+
+  .dot{ position:absolute; width:16px;height:16px;border-radius:50%; background:#111; border:2px solid #111; transform:translate(-50%,-50%); cursor:pointer; }
+  .dot.yellow{box-shadow:0 0 0 3px #f2d13c inset;}
+  .dot.red{box-shadow:0 0 0 3px #e14b3f inset;}
+  .dot.green{box-shadow:0 0 0 3px #3ecf6c inset;}
+  .dot.selected{outline:3px solid #fff;}
+  .split-left svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+
+  .btn{ position:absolute; padding:10px 22px; background:var(--accent); color:#1a1a1a; font-weight:bold; border-radius:6px; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.5); letter-spacing:2px; z-index:5; border:none; font-size:15px;}
+  .btn:hover{filter:brightness(1.1);}
+  .btn.top-right{ top:18px; right:18px; }
+  .btn.bottom-left{ left:20px; bottom:20px; }
+  .btn.small{ padding:7px 14px; font-size:13px; }
+  .btn.hidden{ display:none; }
+
+  .stop-btn{
+    position:absolute; width:88px;height:88px; border-radius:50%;
+    background:var(--blue); color:#fff; border:5px solid #fff;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-size:20px; cursor:pointer; letter-spacing:1px;
+    box-shadow:0 3px 10px rgba(0,0,0,.6);
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  }
+  .stop-btn:hover{filter:brightness(1.15);}
+
+  .star-btn{
+    position:absolute; left:50%; bottom:8%; transform:translateX(-50%);
+    width:70px;height:70px; cursor:pointer; z-index:6;
+    filter:drop-shadow(0 0 8px rgba(255,220,80,.8));
+  }
+  .star-btn.hidden{display:none;}
+
+  .magnifier{ position:absolute; cursor:grab; user-select:none; touch-action:none; z-index:8; }
+  .magnifier img{width:100%; height:100%; display:block; pointer-events:none;}
+  .magnifier.dragging{cursor:grabbing;}
+
+  .ball{
+    position:absolute; width:38px;height:38px;border-radius:50%; cursor:grab;
+    background:radial-gradient(circle at 32% 28%, #9ecbff 0%, #2a63c9 45%, #0d2c6e 100%);
+    box-shadow:0 3px 6px rgba(0,0,0,.6);
+    z-index:6;
+  }
+
+  #navbar{ position:relative; flex:0 0 52px; height:52px; width:100%; display:flex; align-items:center; justify-content:center; gap:22px; background:#16181d; border-top:2px solid #3a3d46; box-shadow:0 -4px 10px rgba(0,0,0,.4); z-index:20; color:#ddd; font-size:14px; }
+  #navbar button{ background:#2a2d35; color:#eee; border:1px solid #444; padding:6px 16px; border-radius:5px; cursor:pointer; }
+  #navbar button:disabled{opacity:.3; cursor:not-allowed;}
+
+  #modalOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.65); display:none; align-items:center; justify-content:center; z-index:50; }
+  #modalOverlay.show{display:flex;}
+  #modalBox{ background:#20232a; padding:30px 34px; border-radius:10px; text-align:center; color:#f0f0f0; min-width:280px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+  #modalBox h3{margin:0 0 16px 0; font-weight:normal; letter-spacing:1px;}
+  #modalBox input{ width:100%; padding:10px; font-size:18px; text-align:center; border-radius:6px; border:1px solid #555; background:#111; color:#fff; letter-spacing:4px; }
+  #modalBox .row{margin-top:16px; display:flex; gap:10px; justify-content:center;}
+  #modalBox button{ padding:8px 18px; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
+  #modalSubmit{background:var(--accent); color:#111;}
+  #modalCancel{background:#444; color:#eee;}
+  #modalError{color:#ff6b6b; height:18px; margin-top:8px; font-size:13px;}
+  .shake{animation:shake .35s;}
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-8px);} 40%{transform:translateX(8px);} 60%{transform:translateX(-6px);} 80%{transform:translateX(6px);} }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="stage active" id="p0">
+    <div class="fullimg"><img src="assets/1.png"><div class="hotspot" id="hs0" style="left:71.5%;top:74.1%;width:19.7%;height:5.8%;"></div></div>
+    <div class="hint">오른쪽 아래 표지판을 클릭하세요</div>
+  </div>
+
+  <div class="stage" id="p1">
+    <div class="split">
+      <div class="split-left">
+        <div class="imgbox" id="dotImgBox">
+          <img src="assets/2_dots.png">
+          <svg id="lineSvg"></svg>
+        </div>
+      </div>
+      <div class="split-right"><div class="narration" id="narrationBox1"></div></div>
+    </div>
+    <button class="btn bottom-left" id="complete1">완료</button>
+    <button class="btn top-right small" id="reset1">초기화</button>
+    <audio id="bgAudio" src="assets/narration.mp3" preload="auto"></audio>
+    <button class="btn small" id="decoderBtn" style="left:20px; top:18px;">해독판</button>
+    <button class="btn small hidden" id="soundFallback" style="left:20px; top:66px;">🔊 소리 재생</button>
+  </div>
+
+  <div class="stage" id="p2">
+    <div class="fullimg"><img src="assets/3.jpg"></div>
+    <button class="btn" id="complete2" style="left:50%;bottom:24px;transform:translateX(-50%);">완료</button>
+  </div>
+
+  <div class="stage" id="p3">
+    <div class="fullimg" id="qrWrap"><img src="assets/qr.jpg">
+      <div class="magnifier" id="magnifier" style="width:25%; left:40%; top:40%;"><img src="assets/magnifier.png"></div>
+    </div>
+    <button class="btn top-right" id="rotateMag">180˚ 회전</button>
+    <button class="btn bottom-left" id="complete3">완료</button>
+  </div>
+
+  <div class="stage" id="p4">
+    <div class="split">
+      <div class="split-left"><div class="imgbox"><img src="assets/door5_pic.png"></div></div>
+      <div class="split-right"><div class="narration" id="narrationBox4"></div></div>
+    </div>
+    <button class="btn bottom-left" id="complete4">완료</button>
+  </div>
+
+  <div class="stage" id="p5">
+    <div class="fullimg"><img src="assets/billiard.jpg">
+      <div class="hotspot" id="hsChest" style="left:86%;top:65%;width:5%;height:8%;"></div>
+      <img class="star-btn hidden" id="starBtn" src="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Cpolygon%20points='50,3%2061,35%2095,35%2068,55%2079,90%2050,70%2021,90%2032,55%205,35%2039,35'%20fill='%23f2d13c'%20stroke='%23a8790a'%20stroke-width='3'/%3E%3C/svg%3E">
+    </div>
+  </div>
+
+  <div class="stage" id="p6">
+    <div class="fullimg"><img src="assets/table.png">
+      <div class="ball" id="ball" style="left:15%; top:92%;"></div>
+    </div>
+    <div class="stop-btn" id="complete6" style="left:50%; top:14px; transform:translateX(-50%);">완료</div>
+  </div>
+
+  <div class="stage" id="p7">
+    <div class="fullimg"><img src="assets/door_notes.png">
+      <div class="hotspot" id="hsKey" style="left:79.5%;top:59%;width:4%;height:7%;"></div>
+    </div>
+  </div>
+
+  <div class="stage" id="p8">
+    <div class="fullimg"><img src="assets/cellar.jpg">
+      <div class="hotspot" id="hsDiamond" style="left:67%;top:79%;width:4.5%;height:5.5%;"></div>
+      <div class="hotspot hidden" id="hsSquare" style="left:14.5%;top:22%;width:4.5%;height:4.5%;"></div>
+    </div>
+  </div>
+
+  <div class="stage" id="p9">
+    <div class="fullimg"><img src="assets/exitdoor.jpg">
+      <div class="hotspot" id="hsPlus" style="left:20.5%;top:51%;width:5%;height:5%;"></div>
+    </div>
+  </div>
+
+  <div class="stage" id="p10">
+    <div class="fullimg"><img src="assets/cover.png"></div>
+  </div>
+
+</div>
+
+<div id="navbar">
+  <button id="prevBtn">◀ 이전</button>
+  <span id="pageLabel">1 / 11</span>
+  <button id="nextBtn">다음 ▶</button>
+</div>
+
+<div id="modalOverlay">
+  <div id="modalBox">
+    <h3>숫자를 입력하세요</h3>
+    <input id="modalInput" type="text" inputmode="numeric" maxlength="6" autocomplete="off">
+    <div id="modalError"></div>
+    <div class="row">
+      <button id="modalSubmit">확인</button>
+      <button id="modalCancel">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOTAL_PAGES = 11;
+let current = 0;
+let unlocked = new Array(TOTAL_PAGES).fill(false); unlocked[0]=true;
+let completed = new Array(TOTAL_PAGES).fill(false);
+const stages = [];
+for(let i=0;i<TOTAL_PAGES;i++) stages.push(document.getElementById('p'+i));
+
+function showPage(idx){
+  current = idx;
+  stages.forEach((s,i)=> s.classList.toggle('active', i===idx));
+  updateNav();
+  if(idx===1){ startNarration('narrationBox1', NARRATION_1); playBgOnce(); }
+  else { pauseBg(); }
+  if(idx===4){ startNarration('narrationBox4', NARRATION_4); }
+}
+function updateNav(){
+  document.getElementById('pageLabel').textContent = (current+1)+" / "+TOTAL_PAGES;
+  document.getElementById('prevBtn').disabled = current===0;
+  const canNext = current < TOTAL_PAGES-1 && unlocked[current+1];
+  document.getElementById('nextBtn').disabled = !canNext;
+}
+function completePage(idx){
+  completed[idx]=true;
+  if(idx+1<TOTAL_PAGES) unlocked[idx+1]=true;
+}
+document.getElementById('prevBtn').onclick = ()=>{ if(current>0) showPage(current-1); };
+document.getElementById('nextBtn').onclick = ()=>{ if(unlocked[current+1]) showPage(current+1); };
+
+let bgAudioPlayedOnce = false;
+function playBgOnce(){
+  if(bgAudioPlayedOnce) return;
+  const a = document.getElementById('bgAudio');
+  a.currentTime = 0;
+  const p = a.play();
+  if(p && p.catch){
+    p.then(()=>{ bgAudioPlayedOnce = true; }).catch(()=>{
+      // autoplay blocked by browser - show a manual play button
+      document.getElementById('soundFallback').classList.remove('hidden');
+    });
+  } else {
+    bgAudioPlayedOnce = true;
+  }
+}
+function pauseBg(){
+  const a = document.getElementById('bgAudio');
+  if(!a.paused){ a.pause(); }
+}
+
+let modalCallback = null;
+const modalOverlay = document.getElementById('modalOverlay');
+const modalInput = document.getElementById('modalInput');
+const modalError = document.getElementById('modalError');
+function openCodeModal(code, onSuccess){
+  modalCallback = { code: String(code), onSuccess };
+  modalInput.value=""; modalError.textContent="";
+  modalOverlay.classList.add('show');
+  setTimeout(()=>modalInput.focus(),50);
+}
+function closeModal(){ modalOverlay.classList.remove('show'); modalCallback=null; }
+document.getElementById('modalCancel').onclick = closeModal;
+document.getElementById('modalSubmit').onclick = submitModal;
+modalInput.addEventListener('keydown', e=>{ if(e.key==='Enter') submitModal(); });
+function submitModal(){
+  if(!modalCallback) return;
+  const val = modalInput.value.trim();
+  if(val === modalCallback.code){
+    const cb = modalCallback.onSuccess;
+    closeModal();
+    cb && cb();
+  } else {
+    modalError.textContent = "틀렸습니다. 다시 시도하세요.";
+    const box = document.getElementById('modalBox');
+    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+  }
+}
+
+document.getElementById('hs0').onclick = ()=>{ completePage(0); showPage(1); };
+
+const DOTS = [
+  {id:'a', color:'yellow', x:329.5/602*100, y:332.4/864*100},
+  {id:'b', color:'yellow', x:236.5/602*100, y:369.0/864*100},
+  {id:'c', color:'yellow', x:363.8/602*100, y:393.9/864*100},
+  {id:'d', color:'yellow', x:292.2/602*100, y:433.4/864*100},
+  {id:'e1',color:'green',  x:370.7/602*100, y:438.6/864*100},
+  {id:'e2',color:'green',  x:353.4/602*100, y:453.1/864*100},
+  {id:'f', color:'yellow', x:404.2/602*100, y:461.5/864*100},
+  {id:'g', color:'red',    x:260.7/602*100, y:480.0/864*100},
+  {id:'h', color:'red',    x:334.6/602*100, y:491.8/864*100},
+  {id:'i', color:'yellow', x:351.0/602*100, y:529.2/864*100},
+  {id:'j', color:'red',    x:233.3/602*100, y:554.6/864*100},
+  {id:'k', color:'red',    x:305.1/602*100, y:572.4/864*100},
+  {id:'l', color:'red',    x:278.5/602*100, y:655.5/864*100},
+  {id:'m', color:'green',  x:390.3/602*100, y:639.5/864*100}
+];
+const imgBox = document.getElementById('dotImgBox');
+const svg = document.getElementById('lineSvg');
+let selectedDot = null;
+const connections = new Set();
+function dotKey(a,b){ return [a,b].sort().join('__'); }
+DOTS.forEach(d=>{
+  const el = document.createElement('div');
+  el.className = 'dot '+d.color;
+  el.style.left = d.x+'%'; el.style.top = d.y+'%';
+  el.onclick = ()=> onDotClick(d, el);
+  imgBox.appendChild(el);
+  d._el = el;
+});
+function onDotClick(d, el){
+  if(!selectedDot){ selectedDot=d; el.classList.add('selected'); return; }
+  if(selectedDot.id===d.id){ selectedDot._el.classList.remove('selected'); selectedDot=null; return; }
+  if(selectedDot.color !== d.color){
+    el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),350);
+    selectedDot._el.classList.remove('selected'); selectedDot=null; return;
+  }
+  const key = dotKey(selectedDot.id,d.id);
+  if(!connections.has(key)){ connections.add(key); drawLine(selectedDot,d); }
+  selectedDot._el.classList.remove('selected'); selectedDot=null;
+}
+function drawLine(a,b){
+  const ns="http://www.w3.org/2000/svg";
+  const line=document.createElementNS(ns,'line');
+  line.setAttribute('x1',a.x+'%'); line.setAttribute('y1',a.y+'%');
+  line.setAttribute('x2',b.x+'%'); line.setAttribute('y2',b.y+'%');
+  const cmap={yellow:'#f2d13c',red:'#e14b3f',green:'#3ecf6c'};
+  line.setAttribute('stroke',cmap[a.color]); line.setAttribute('stroke-width','3');
+  line.setAttribute('stroke-linecap','round'); line.dataset.key=dotKey(a.id,b.id);
+  svg.appendChild(line);
+}
+document.getElementById('reset1').onclick = ()=>{
+  connections.clear();
+  svg.innerHTML='';
+  if(selectedDot){ selectedDot._el.classList.remove('selected'); selectedDot=null; }
+};
+document.getElementById('decoderBtn').onclick = ()=> window.open('해독판.html', '_blank');
+document.getElementById('complete1').onclick = ()=> openCodeModal(931, ()=>{ completePage(1); showPage(2); });
+document.getElementById('soundFallback').onclick = ()=>{
+  const a = document.getElementById('bgAudio');
+  a.currentTime = 0;
+  a.play().then(()=>{ bgAudioPlayedOnce = true; document.getElementById('soundFallback').classList.add('hidden'); }).catch(()=>{});
+};
+
+const NARRATION_1 = [
+"눈이 점차 어둠에 적응하며 집의 내부가 보이기 시작합니다.",
+"현관에는 아무것도 없습니다.",
+"\"소피아? 펜리? 톰?\" 세 탐정의 이름을 불러보지만, 목소리만이 메아리가 되어 공허하게 돌아올 뿐입니다.",
+"\"저기, 누구 없나요?\" 무언가 이상합니다. 맞이해주는 사람이 하나도 없다니요?",
+"세 탐정은 또 어디 있고요?",
+"갑자기 원형 조명이 켜지더니 현관 복도 끝에 있는 나무 문을 환하게 비춥니다.",
+"문 위쪽에는 커다란 발간색 물음표가 밝게 빛나고 있습니다. 통의 표식입니다!",
+"한달음에 달려가 보지만, 문은 발간색 자물쇠로 단단히 잠겨 있습니다.",
+"문 아래쪽에는 이상한 기호가 그려져 있습니다. 두껍게 쓴 'ㄴ' 모양입니다.",
+"문 가운데에 찍힌 점들도 눈에 들어옵니다. 혹시 흉일이 박혔단 흔적은 아니겠지요…?",
+"구멍에 너무 집중한 탓에 시야가 흐려질 때쯤, 문에 색색의 문자들이 떠오릅니다.",
+"그리고 한 줄기 바람이 불어오더니,",
+"\"수수께끼 카드 A\"라고 쓰인 카드 한 장이 공중에서 천천히 펼쳐집니다.",
+"갑자기 어디선가 날카로운 비명이 들려옵니다! 누구의 비명이죠?",
+"세 탐정 중 한 명일까요? 그들에게 무슨 일이 일어난 걸까요?!",
+"여기 가만히 있을 수는 없습니다. 어떻게든 수수께끼를 풀어 이 문을 열고 나가야겠습니다."
+];
+
+document.getElementById('complete2').onclick = ()=> openCodeModal(937, ()=>{ completePage(2); showPage(3); });
+
+const mag = document.getElementById('magnifier');
+let magRot = 0;
+document.getElementById('rotateMag').onclick = ()=>{
+  magRot = magRot===0 ? 180 : 0;
+  mag.style.transform = 'rotate('+magRot+'deg)';
+};
+(function enableDrag(el, container){
+  let dragging=false, offX=0, offY=0;
+  el.addEventListener('pointerdown', e=>{
+    dragging=true; el.classList.add('dragging'); el.setPointerCapture(e.pointerId);
+    const r = el.getBoundingClientRect();
+    offX = e.clientX - r.left; offY = e.clientY - r.top;
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const cr = container.getBoundingClientRect();
+    let nx = e.clientX - cr.left - offX;
+    let ny = e.clientY - cr.top - offY;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    nx = Math.max(0, Math.min(cr.width - w, nx));
+    ny = Math.max(0, Math.min(cr.height - h, ny));
+    el.style.left = (nx/cr.width*100)+'%';
+    el.style.top = (ny/cr.height*100)+'%';
+  });
+  el.addEventListener('pointerup', ()=>{ dragging=false; el.classList.remove('dragging'); });
+})(mag, document.getElementById('qrWrap'));
+document.getElementById('complete3').onclick = ()=> openCodeModal(253, ()=>{ completePage(3); showPage(4); });
+
+const NARRATION_4 = [
+"천천히 통로를 따라 움직입니다. 짙게 내려앉은 어둠 외에는 아무것도 없습니다.",
+"저 끝에 좁은 구멍 하나가 보입니다, 건너편에 무엇이 있는지는 보이지 않습니다.",
+"너무 좁아서 들어갈 수 있을지 모르겠지만, 일단 해보는 수밖에요.",
+"숨을 크게 들이쉬고 몸을 최대한 구겨 넣습니다. 한참을 애쓴 끝에 반대편으로 나옵니다.",
+"\"소피아, 헨리, 톰? 여기 있나요?\" 세 탐정은 여전히 대답이 없습니다….",
+"천장 등이 깜빡입니다. 지금 서 있는 곳은 길고, 넓은 복도입니다.",
+"발밑에 구겨진 종잇조각이 떨어져 있습니다. 종이를 주워 한 겹씩 펼치자, 급히 휘갈겨 쓴 것만 같은 \"도와줘\" 세 글자가 눈에 들어옵니다.",
+"충격에 휩싸여 한참 동안 글자를 바라만 보았습니다.",
+"세 탐정은 위험한 상황에 처한 게 분명합니다. 어서 가서 도와줘야 합니다!",
+"목표가 뚜렷해지자 정신이 번쩍 듭니다. 재빨리 복도를 살살이 살피지만, 더 이상의 흔적은 나오지 않습니다.",
+"갑자기 복도 저 끝에서 굉장히 강한 빛이 밝은 나무 문을 비춥니다.",
+"문 한가운데에는 파란색 물음표가 떠 있고, 앞에는 운동 기구가 놓여 있습니다.",
+"파란색 물음표와 운동 기구! 헨리의 방이 확실합니다!",
+"1분 1초가 급합니다. 흥분을 가라앉히고 침착하게 답을 생각해, 헨리가 낸 수수께끼를 한시라도 빨리 해결합시다."
+];
+document.getElementById('complete4').onclick = ()=> openCodeModal(124, ()=>{ completePage(4); showPage(5); });
+
+document.getElementById('hsChest').onclick = ()=>{
+  openCodeModal(879, ()=>{
+    document.getElementById('starBtn').classList.remove('hidden');
+  });
+};
+document.getElementById('starBtn').onclick = ()=>{ completePage(5); showPage(6); };
+
+(function enableDrag(el, container){
+  let dragging=false, offX=0, offY=0;
+  el.addEventListener('pointerdown', e=>{
+    dragging=true; el.setPointerCapture(e.pointerId);
+    const r = el.getBoundingClientRect();
+    offX = e.clientX - r.left; offY = e.clientY - r.top;
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const cr = container.getBoundingClientRect();
+    let nx = e.clientX - cr.left - offX;
+    let ny = e.clientY - cr.top - offY;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    nx = Math.max(0, Math.min(cr.width - w, nx));
+    ny = Math.max(0, Math.min(cr.height - h, ny));
+    el.style.left = (nx/cr.width*100)+'%';
+    el.style.top = (ny/cr.height*100)+'%';
+  });
+  el.addEventListener('pointerup', ()=>{ dragging=false; });
+})(document.getElementById('ball'), document.getElementById('p6').querySelector('.fullimg'));
+document.getElementById('complete6').onclick = ()=> openCodeModal(144, ()=>{ completePage(6); showPage(7); });
+
+document.getElementById('hsKey').onclick = ()=> openCodeModal(513, ()=>{ completePage(7); showPage(8); });
+
+document.getElementById('hsDiamond').onclick = ()=>{
+  openCodeModal(528, ()=>{ document.getElementById('hsSquare').classList.remove('hidden'); });
+};
+document.getElementById('hsSquare').onclick = ()=> openCodeModal(415, ()=>{ completePage(8); showPage(9); });
+
+document.getElementById('hsPlus').onclick = ()=> openCodeModal(386, ()=>{ completePage(9); showPage(10); });
+
+const narrationStarted = {};
+function startNarration(boxId, lines){
+  if(narrationStarted[boxId]) return;
+  narrationStarted[boxId] = true;
+  const box = document.getElementById(boxId);
+  box.innerHTML = "";
+  lines.forEach(t=>{ const p=document.createElement('p'); p.textContent=t; box.appendChild(p); });
+  setTimeout(()=>{
+    const ps = box.querySelectorAll('p');
+    ps.forEach((p,i)=> setTimeout(()=> p.classList.add('show'), i*550));
+  }, 1000);
+}
+
+showPage(0);
+</script>
+</body>
+</html>
