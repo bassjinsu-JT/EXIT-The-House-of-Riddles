@@ -394,7 +394,7 @@ document.getElementById('rotateMag').onclick = ()=>{
   });
   el.addEventListener('pointerup', ()=>{ dragging=false; el.classList.remove('dragging'); });
 })(mag, document.getElementById('qrWrap'));
-document.getElementById('complete3').onclick = ()=> openCodeModal(253, ()=>{ completePage(3); showPage(4); });
+document.getElementById('complete3').onclick = ()=> openCodeModal(6, ()=>{ completePage(3); showPage(4); });
 
 const NARRATION_4 = [
 "천천히 통로를 따라 움직입니다. 짙게 내려앉은 어둠 외에는 아무것도 없습니다.",
@@ -412,10 +412,10 @@ const NARRATION_4 = [
 "파란색 물음표와 운동 기구! 헨리의 방이 확실합니다!",
 "1분 1초가 급합니다. 흥분을 가라앉히고 침착하게 답을 생각해, 헨리가 낸 수수께끼를 한시라도 빨리 해결합시다."
 ];
-document.getElementById('complete4').onclick = ()=> openCodeModal(124, ()=>{ completePage(4); showPage(5); });
+document.getElementById('complete4').onclick = ()=> openCodeModal(11, ()=>{ completePage(4); showPage(5); });
 
 document.getElementById('hsChest').onclick = ()=>{
-  openCodeModal(879, ()=>{
+  openCodeModal(3, ()=>{
     document.getElementById('starBtn').classList.remove('hidden');
   });
 };
@@ -441,16 +441,16 @@ document.getElementById('starBtn').onclick = ()=>{ completePage(5); showPage(6);
   });
   el.addEventListener('pointerup', ()=>{ dragging=false; });
 })(document.getElementById('ball'), document.getElementById('p6').querySelector('.fullimg'));
-document.getElementById('complete6').onclick = ()=> openCodeModal(144, ()=>{ completePage(6); showPage(7); });
+document.getElementById('complete6').onclick = ()=> openCodeModal(22, ()=>{ completePage(6); showPage(7); });
 
-document.getElementById('hsKey').onclick = ()=> openCodeModal(513, ()=>{ completePage(7); showPage(8); });
+document.getElementById('hsKey').onclick = ()=> openCodeModal(18, ()=>{ completePage(7); showPage(8); });
 
 document.getElementById('hsDiamond').onclick = ()=>{
-  openCodeModal(528, ()=>{ document.getElementById('hsSquare').classList.remove('hidden'); });
+  openCodeModal(14, ()=>{ document.getElementById('hsSquare').classList.remove('hidden'); });
 };
-document.getElementById('hsSquare').onclick = ()=> openCodeModal(415, ()=>{ completePage(8); showPage(9); });
+document.getElementById('hsSquare').onclick = ()=> openCodeModal(25, ()=>{ completePage(8); showPage(9); });
 
-document.getElementById('hsPlus').onclick = ()=> openCodeModal(386, ()=>{ completePage(9); showPage(10); });
+document.getElementById('hsPlus').onclick = ()=> openCodeModal(12, ()=>{ completePage(9); showPage(10); });
 
 const narrationStarted = {};
 function startNarration(boxId, lines){
