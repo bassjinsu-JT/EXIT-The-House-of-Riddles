@@ -340,7 +340,7 @@ document.getElementById('reset1').onclick = ()=>{
   if(selectedDot){ selectedDot._el.classList.remove('selected'); selectedDot=null; }
 };
 document.getElementById('decoderBtn').onclick = ()=> window.open('해독판.html', '_blank');
-document.getElementById('complete1').onclick = ()=> openCodeModal(391, ()=>{ completePage(1); showPage(2); });
+document.getElementById('complete1').onclick = ()=> openCodeModal(7, ()=>{ completePage(1); showPage(2); });
 document.getElementById('soundFallback').onclick = ()=>{
   const a = document.getElementById('bgAudio');
   a.currentTime = 0;
@@ -366,7 +366,7 @@ const NARRATION_1 = [
 "여기 가만히 있을 수는 없습니다. 어떻게든 수수께끼를 풀어 이 문을 열고 나가야겠습니다."
 ];
 
-document.getElementById('complete2').onclick = ()=> openCodeModal(937, ()=>{ completePage(2); showPage(3); });
+document.getElementById('complete2').onclick = ()=> openCodeModal(30, ()=>{ completePage(2); showPage(3); });
 
 const mag = document.getElementById('magnifier');
 let magRot = 0;
