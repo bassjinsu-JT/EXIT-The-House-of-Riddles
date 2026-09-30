@@ -366,7 +366,7 @@ const NARRATION_1 = [
 "여기 가만히 있을 수는 없습니다. 어떻게든 수수께끼를 풀어 이 문을 열고 나가야겠습니다."
 ];
 
-document.getElementById('complete2').onclick = ()=> openCodeModal(30, ()=>{ completePage(2); showPage(3); });
+document.getElementById('complete2').onclick = ()=> openCodeModal(6, ()=>{ completePage(2); showPage(3); });
 
 const mag = document.getElementById('magnifier');
 let magRot = 0;
@@ -394,7 +394,7 @@ document.getElementById('rotateMag').onclick = ()=>{
   });
   el.addEventListener('pointerup', ()=>{ dragging=false; el.classList.remove('dragging'); });
 })(mag, document.getElementById('qrWrap'));
-document.getElementById('complete3').onclick = ()=> openCodeModal(6, ()=>{ completePage(3); showPage(4); });
+document.getElementById('complete3').onclick = ()=> openCodeModal(30, ()=>{ completePage(3); showPage(4); });
 
 const NARRATION_4 = [
 "천천히 통로를 따라 움직입니다. 짙게 내려앉은 어둠 외에는 아무것도 없습니다.",
