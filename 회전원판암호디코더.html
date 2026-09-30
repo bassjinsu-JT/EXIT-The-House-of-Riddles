@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회전 원판 암호 디코더</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EFEAE0;
+    --panel:#F8F5EE;
+    --ink:#242321;
+    --line:#CFC7B0;
+    --accent:#C1443C;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:22px 22px;
+    background-position:-1px -1px;
+    color:var(--ink);
+    font-family:'IBM Plex Sans KR', sans-serif;
+    min-height:100vh;
+  }
+  .wrap{ max-width:1000px; margin:0 auto; padding:28px 20px 60px; }
+  header h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(22px, 4vw, 32px);
+    letter-spacing:-0.01em;
+    margin:0 0 6px;
+  }
+  header h1 .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.4em;
+    font-weight:500;
+    background:var(--ink);
+    color:var(--bg);
+    padding:3px 8px;
+    border-radius:4px;
+    vertical-align:middle;
+    margin-left:10px;
+  }
+  header p{ margin:0 0 16px; color:#5a5648; font-size:14.5px; line-height:1.6; max-width:700px; }
+
+  .panel{
+    background:var(--panel);
+    border:2px solid var(--ink);
+    border-radius:6px;
+    padding:16px 18px;
+    margin-bottom:18px;
+    font-size:13.5px; line-height:1.8; color:#3a382f;
+  }
+  .panel h2{ font-size:14px; font-weight:600; margin:0 0 8px; }
+
+  .main-area{ display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start; }
+  .wheel-box{ flex-shrink:0; width:520px; max-width:100%; touch-action:none; }
+  .controls{ flex:1; min-width:240px; display:flex; flex-direction:column; gap:14px; }
+  .layer-control{
+    background:var(--panel); border:2px solid var(--ink); border-radius:6px; padding:10px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .layer-control .label{ font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .swatch{ width:14px; height:14px; border-radius:50%; border:1.5px solid var(--ink); display:inline-block; }
+  .btnrow{ display:flex; gap:6px; }
+  .rotbtn{
+    width:32px; height:32px; border:2px solid var(--ink); border-radius:5px; background:#fff; cursor:pointer;
+    font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .rotbtn:hover{ background:var(--ink); color:#fff; }
+  .rotbtn:focus-visible{ outline:3px solid #3B5BA5; outline-offset:2px; }
+  .hint{ font-size:12px; color:#8b8570; margin-top:2px; }
+  .reset-all{
+    padding:10px 14px; font-family:inherit; font-weight:600; font-size:13px;
+    border:2px solid var(--ink); border-radius:5px; background:#fff; color:var(--ink); cursor:pointer;
+  }
+  .reset-all:hover{ background:var(--ink); color:#fff; }
+  .readout{
+    background:var(--ink); color:var(--bg); border-radius:6px; padding:14px 16px; text-align:center;
+  }
+  .readout-label{ font-size:12px; opacity:0.8; margin-bottom:6px; }
+  .readout-value{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:40px; line-height:1;
+  }
+  .readout-source{ font-size:12px; opacity:0.75; margin-top:6px; }
+  .readout.unlocked{ background:#3E7C59; }
+  .readout.unlocked .readout-value{ font-size:22px; }
+  #revealIcon{ transition: opacity 0.4s ease; }
+  .code-panel{
+    background:var(--panel); border:2px solid var(--ink); border-radius:6px; padding:12px 14px;
+  }
+  .code-panel-title{ font-weight:700; font-size:13px; margin-bottom:4px; }
+  .code-panel-desc{ font-size:11.5px; color:#5a5648; line-height:1.5; margin-bottom:10px; }
+  .code-inputs{ display:flex; gap:8px; }
+  .code-box{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .code-tag{ font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid var(--ink); }
+  .code-box input{
+    width:100%; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:700;
+    border:2px solid var(--ink); border-radius:5px; padding:5px 2px; background:#fff; color:var(--ink);
+  }
+  .code-box input:focus-visible{ outline:3px solid #3B5BA5; outline-offset:1px; }
+  footer{ text-align:center; font-size:12px; color:#8b8570; margin-top:26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>회전 원판 암호 디코더<span class="tag">4겹 다이얼</span></h1>
+    <p>가장 큰 검은 원판은 고정되어 있고, 빨간·흰·파란 원판 세 개를 그 위에 겹쳐 각각 돌릴 수 있어요. 원판을 드래그하거나 화살표 버튼을 눌러 돌리면서, 검은 원판 가장자리의 기호에 맞춰 구멍으로 어떤 숫자가 보이는지 찾아보세요.</p>
+  </header>
+
+  <div class="panel">
+    <h2>사용법</h2>
+    각 원판의 색이 보이는 띠 부분을 마우스로 눌러 드래그하면 그 원판만 돌아가요. 오른쪽의 화살표 버튼으로 한 칸씩 돌릴 수도 있어요. 안쪽 원판에 뚫려 있는 구멍(부채꼴 또는 카드 창)을 통해 아래에 있는 원판의 숫자가 보이게 됩니다. 바깥쪽 눈금이 가리키는 흰·빨강·파랑 세 숫자를 정답으로 맞추면 파란 창에 그림이 나타나요.
+  </div>
+
+  <div class="main-area">
+    <div class="wheel-box">
+      <svg id="wheelSvg" viewBox="-320 -320 640 640" width="100%" height="100%"></svg>
+    </div>
+    <div class="controls">
+      <div class="readout" id="readoutBox">
+        <div class="readout-label" id="readoutLabel">지금 파란 창에 보이는 숫자</div>
+        <div class="readout-value" id="readoutValue">–</div>
+        <div class="readout-source" id="readoutSource"></div>
+      </div>
+      <div class="layer-control">
+        <span class="label"><span class="swatch" style="background:#fff;"></span>흰 원판</span>
+        <div class="btnrow">
+          <button class="rotbtn" data-layer="white" data-dir="-1">↺</button>
+          <button class="rotbtn" data-layer="white" data-dir="1">↻</button>
+        </div>
+      </div>
+      <div class="layer-control">
+        <span class="label"><span class="swatch" style="background:#C1443C;"></span>빨간 원판</span>
+        <div class="btnrow">
+          <button class="rotbtn" data-layer="red" data-dir="-1">↺</button>
+          <button class="rotbtn" data-layer="red" data-dir="1">↻</button>
+        </div>
+      </div>
+      <div class="layer-control">
+        <span class="label"><span class="swatch" style="background:#3BA7D9;"></span>파란 원판</span>
+        <div class="btnrow">
+          <button class="rotbtn" data-layer="blue" data-dir="-1">↺</button>
+          <button class="rotbtn" data-layer="blue" data-dir="1">↻</button>
+        </div>
+      </div>
+      <button class="reset-all" id="resetAll">모두 처음 위치로</button>
+      <div class="code-panel">
+        <div class="code-panel-title">🔑 정답 코드 설정</div>
+        <div class="code-panel-desc">바깥 눈금이 가리키는 흰·빨강·파랑 숫자가 아래 값과 모두 같아지면 파란 창에 그림이 나타나요.</div>
+        <div class="code-inputs">
+          <div class="code-box">
+            <span class="code-tag" style="background:#eee;">흰색</span>
+            <input type="number" id="codeWhite" min="0" max="9" value="0">
+          </div>
+          <div class="code-box">
+            <span class="code-tag" style="background:#C1443C; color:#fff;">빨강</span>
+            <input type="number" id="codeRed" min="0" max="9" value="0">
+          </div>
+          <div class="code-box">
+            <span class="code-tag" style="background:#3BA7D9; color:#fff;">파랑</span>
+            <input type="number" id="codeBlue" min="0" max="9" value="0">
+          </div>
+        </div>
+      </div>
+      <div class="hint">검은 원판은 기준판이라 고정되어 있어요. 파란 원판의 카드 창이 어느 칸에 오느냐에 따라 그 아래(빨강→흰색→검정 순)에서 가장 먼저 숫자가 있는 칸이 보여요.</div>
+    </div>
+  </div>
+
+  <footer>실제 원판 세트를 본떠 만든 디지털 시뮬레이터예요. 왼쪽 위 '정답 코드 설정'에 원하는 세 자리 숫자를 입력해두고, 원판을 그 숫자에 맞추면 그림이 나타나는지 확인해보세요.</footer>
+</div>
+
+<script>
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('wheelSvg');
+
+function deg2rad(d){ return d*Math.PI/180; }
+function polar(r, angleDeg){
+  const a = deg2rad(angleDeg - 90); // 0deg = up
+  return [r*Math.cos(a), r*Math.sin(a)];
+}
+function arcPoint(r, angleDeg){ const [x,y]=polar(r,angleDeg); return `${x.toFixed(2)},${y.toFixed(2)}`; }
+
+function wedgePath(rOuter, rInner, a0, a1){
+  const large = (a1-a0) > 180 ? 1 : 0;
+  const p1 = polar(rOuter, a0), p2 = polar(rOuter, a1);
+  const p3 = polar(rInner, a1), p4 = polar(rInner, a0);
+  return `M ${p1[0].toFixed(2)},${p1[1].toFixed(2)} A ${rOuter},${rOuter} 0 ${large} 1 ${p2[0].toFixed(2)},${p2[1].toFixed(2)} L ${p3[0].toFixed(2)},${p3[1].toFixed(2)} A ${rInner},${rInner} 0 ${large} 0 ${p4[0].toFixed(2)},${p4[1].toFixed(2)} Z`;
+}
+
+function makeEl(tag, attrs){
+  const el = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function addText(parent, r, angleDeg, str, opts={}){
+  const [x,y] = polar(r, angleDeg);
+  const t = makeEl('text', Object.assign({
+    x:x.toFixed(2), y:y.toFixed(2), 'text-anchor':'middle', 'dominant-baseline':'middle',
+    'font-family':'IBM Plex Mono, monospace', 'font-weight':'700', 'font-size':'20',
+    fill: opts.fill || '#1a1a1a',
+    transform: `rotate(${angleDeg} ${x.toFixed(2)} ${y.toFixed(2)})`
+  }, opts.attrs||{}));
+  t.textContent = str;
+  parent.appendChild(t);
+}
+
+function drawSymbol(parent, type, x, y, size, angleDeg){
+  const g = makeEl('g', { transform:`translate(${x.toFixed(2)},${y.toFixed(2)}) rotate(${angleDeg})` });
+  const s = size;
+  const fill = 'url(#metal)';
+  const stroke = '#555';
+  let shape;
+  switch(type){
+    case 'hexagon':
+      shape = makeEl('polygon', { points: hexPoints(s), fill, stroke });
+      break;
+    case 'diamond':
+      shape = makeEl('polygon', { points:`0,${-s} ${s*0.75},0 0,${s} ${-s*0.75},0`, fill, stroke });
+      break;
+    case 'star':
+      shape = makeEl('polygon', { points: starPoints(s), fill, stroke });
+      break;
+    case 'moon':
+      shape = makeEl('path', { d:`M ${s*0.5},${-s} A ${s},${s} 0 1 0 ${s*0.5},${s} A ${s*0.75},${s*0.9} 0 1 1 ${s*0.5},${-s} Z`, fill, stroke });
+      break;
+    case 'chevron':
+      shape = makeEl('polygon', { points:`${-s},${-s*0.6} 0,${-s*0.6} ${s},${s*0.6} 0,${s*0.6} ${-s},${s*0.6} ${-s*0.3},0`, fill, stroke });
+      break;
+    case 'rhombus':
+      shape = makeEl('polygon', { points:`${-s},${s*0.4} ${-s*0.2},${-s*0.6} ${s},${-s*0.4} ${s*0.2},${s*0.6}`, fill, stroke });
+      break;
+    case 'cross':
+      shape = makeEl('path', { d: crossPath(s*0.7), fill, stroke });
+      break;
+    case 'circle':
+      shape = makeEl('circle', { cx:0, cy:0, r:s*0.8, fill, stroke });
+      break;
+    case 'triangle':
+      shape = makeEl('polygon', { points:`0,${-s} ${s*0.9},${s*0.7} ${-s*0.9},${s*0.7}`, fill, stroke });
+      break;
+    default:
+      shape = makeEl('circle', { cx:0, cy:0, r:s*0.6, fill, stroke });
+  }
+  shape.setAttribute('stroke-width','1.5');
+  g.appendChild(shape);
+  parent.appendChild(g);
+}
+function hexPoints(s){
+  let pts = [];
+  for(let i=0;i<6;i++){ const a = deg2rad(60*i - 90); pts.push(`${(s*Math.cos(a)).toFixed(2)},${(s*Math.sin(a)).toFixed(2)}`); }
+  return pts.join(' ');
+}
+function starPoints(s){
+  let pts = [];
+  for(let i=0;i<12;i++){ const r = i%2===0 ? s : s*0.45; const a = deg2rad(30*i - 90); pts.push(`${(r*Math.cos(a)).toFixed(2)},${(r*Math.sin(a)).toFixed(2)}`); }
+  return pts.join(' ');
+}
+function crossPath(s){
+  const t = s*0.4;
+  return `M ${-t},${-s} L ${t},${-s} L ${t},${-t} L ${s},${-t} L ${s},${t} L ${t},${t} L ${t},${s} L ${-t},${s} L ${-t},${t} L ${-s},${t} L ${-s},${-t} L ${-t},${-t} Z`;
+}
+
+// ---- data ----
+const N = 10;
+const step = 360/N;
+
+const blackSegs = [
+  {symbol:'hexagon', number:26},
+  {symbol:'triangle', number:20},
+  {symbol:'diamond', number:10},
+  {symbol:'star', number:16},
+  {symbol:'moon', number:24},
+  {symbol:'chevron', number:9},
+  {symbol:'rhombus', number:17},
+  {symbol:'cross', number:5},
+  {symbol:'circle', number:28},
+  {symbol:'triangle', number:1},
+];
+
+// Stacking order (bottom to top): black -> white -> red -> blue.
+// White sits directly on the black base (uses the bigger R.L2 ring),
+// red sits on white (uses the smaller R.L3 ring), blue is smallest, on top.
+const whiteDigits = [6,7,8,9,0,1,2,3,4,5];
+const whiteInner = [2,null,15,null,19,4,8,19,13,null]; // null = cutout
+
+const redDigits = [6,7,8,9,0,1,2,3,4,5];
+const redInner = [null,27,null,23,null,21,null,2,null,29]; // null = cutout
+
+const blueDigits = [0,1,2,3,4,5,6,7,8,9];
+
+// radii
+const R = {
+  L1o:300, L1i:210,
+  L2o:205, L2i:145,  // white
+  L3o:140, L3i:95,   // red
+  L4o:90,  L4i:55,   // blue
+};
+
+// The rounded-rectangle "card" set into the blue (topmost) disk, with a
+// funnel-shaped hole cut through it (wide at the top, narrowing to a point
+// near the bottom) and a gold trim frame -- matched to the reference photo.
+// Position/size are proportional to the black inner circle (R.L4i).
+const CARD = {
+  cx: 0.20 * R.L4i,
+  cy: -0.35 * R.L4i,
+  w: 0.60 * R.L4i,
+  h: 0.92 * R.L4i,
+  rot: -25
+};
+// The hole's corners, as fractions of the card's own width/height, measured
+// from the reference photo (wide flat top, narrowing to a point near the
+// bottom -- not a simple rectangle).
+const HOLE_LOCAL = [
+  [-0.3875 * CARD.w, -0.3624 * CARD.h], // top-left
+  [ 0.4500 * CARD.w, -0.3462 * CARD.h], // top-right
+  [ 0.0375 * CARD.w,  0.0911 * CARD.h], // bottom point
+];
+// the window's own angular position (in blue's local, unrotated frame), using the
+// same angle convention as polar(): 0deg = up, clockwise positive.
+const WINDOW_ANGLE = (Math.atan2(CARD.cy, CARD.cx) * 180 / Math.PI + 90 + 360) % 360;
+
+// state
+const rotation = { red:0, white:0, blue:0 };
+
+function rotatePoint(x,y,rotDeg,cx=0,cy=0){
+  const rot = deg2rad(rotDeg);
+  return [
+    x*Math.cos(rot) - y*Math.sin(rot) + cx,
+    x*Math.sin(rot) + y*Math.cos(rot) + cy
+  ];
+}
+function describeCircle(cx,cy,r){
+  return `M ${cx-r},${cy} A ${r},${r} 0 1 0 ${cx+r},${cy} A ${r},${r} 0 1 0 ${cx-r},${cy} Z`;
+}
+
+function buildAll(){
+  svg.innerHTML = '';
+  const defs = makeEl('defs',{});
+  const grad = makeEl('radialGradient',{id:'metal', cx:'35%', cy:'30%'});
+  grad.appendChild(makeEl('stop',{offset:'0%', 'stop-color':'#f5f5f5'}));
+  grad.appendChild(makeEl('stop',{offset:'55%', 'stop-color':'#c8c8c8'}));
+  grad.appendChild(makeEl('stop',{offset:'100%', 'stop-color':'#8a8a8a'}));
+  defs.appendChild(grad);
+  const marble = makeEl('radialGradient',{id:'marble', cx:'40%', cy:'35%'});
+  marble.appendChild(makeEl('stop',{offset:'0%', 'stop-color':'#bfe3ef'}));
+  marble.appendChild(makeEl('stop',{offset:'100%', 'stop-color':'#7fb8cf'}));
+  defs.appendChild(marble);
+  svg.appendChild(defs);
+
+  svg.appendChild(makeEl('circle',{cx:0,cy:0,r:R.L1o+6, fill:'#fdfdfb', stroke:'#ddd', 'stroke-width':2}));
+
+  // L1 black (fixed)
+  const blackG = makeEl('g',{});
+  blackG.appendChild(makeEl('circle', {cx:0,cy:0,r:R.L1i, fill:'url(#marble)'}));
+  for(let i=0;i<N;i++){
+    const a0=i*step, a1=(i+1)*step, mid=a0+step/2;
+    blackG.appendChild(makeEl('path',{ d: wedgePath(R.L1o, R.L1i, a0, a1), fill:'#1c1c1c', stroke:'#000', 'stroke-width':'1' }));
+    const [sx,sy] = polar((R.L1o+R.L1i)/2, mid);
+    drawSymbol(blackG, blackSegs[i].symbol, sx, sy, 15, mid);
+    addText(blackG, R.L1i*0.72, mid, String(blackSegs[i].number), {fill:'#111'});
+  }
+  svg.appendChild(blackG);
+
+  // L2 white (rotatable) -- sits directly on the black base
+  const whiteWrap = makeEl('g', {'data-layer':'white'});
+  for(let i=0;i<N;i++){
+    const a0=i*step, a1=(i+1)*step, mid=a0+step/2;
+    whiteWrap.appendChild(makeEl('path', { d: wedgePath(R.L2o, R.L2i, a0, a1), fill:'#ffffff', stroke:'#00000030' }));
+    addText(whiteWrap, (R.L2o+R.L2i)/2, mid, String(whiteDigits[i]), {fill:'#111'});
+    if(whiteInner[i] !== null){
+      whiteWrap.appendChild(makeEl('path', { d: wedgePath(R.L2i, 26, a0, a1), fill:'url(#marble)', stroke:'#00000020' }));
+      addText(whiteWrap, R.L2i*0.6, mid, String(whiteInner[i]), {fill:'#111', attrs:{'font-size':'16'}});
+    }
+  }
+  whiteWrap.appendChild(makeEl('circle',{cx:0,cy:0,r:10, fill:'#fff', stroke:'#999'}));
+  const whiteHit = makeEl('path', {d: wedgePath(R.L2o, R.L2i, 0, 359.999), fill:'transparent'});
+  whiteWrap.appendChild(whiteHit);
+  svg.appendChild(whiteWrap);
+
+  // L3 red (rotatable) -- sits on white
+  const redWrap = makeEl('g', {'data-layer':'red'});
+  for(let i=0;i<N;i++){
+    const a0=i*step, a1=(i+1)*step, mid=a0+step/2;
+    redWrap.appendChild(makeEl('path', { d: wedgePath(R.L3o, R.L3i, a0, a1), fill:'#D9412E', stroke:'#00000030' }));
+    addText(redWrap, (R.L3o+R.L3i)/2, mid, String(redDigits[i]), {fill:'#111', attrs:{'font-size':'14'}});
+    if(redInner[i] !== null){
+      redWrap.appendChild(makeEl('path', { d: wedgePath(R.L3i, 16, a0, a1), fill:'url(#marble)', stroke:'#00000020' }));
+      addText(redWrap, R.L3i*0.58, mid, String(redInner[i]), {fill:'#111', attrs:{'font-size':'14'}});
+    }
+  }
+  redWrap.appendChild(makeEl('circle',{cx:0,cy:0,r:8, fill:'#fff', stroke:'#999'}));
+  const redHit = makeEl('path', {d: wedgePath(R.L3o, R.L3i, 0, 359.999), fill:'transparent'});
+  redWrap.appendChild(redHit);
+  svg.appendChild(redWrap);
+
+  // L4 blue (rotatable, smallest, on top) -- has the card + funnel-shaped window
+  const blueWrap = makeEl('g', {'data-layer':'blue'});
+  for(let i=0;i<N;i++){
+    const a0=i*step, a1=(i+1)*step, mid=a0+step/2;
+    blueWrap.appendChild(makeEl('path', { d: wedgePath(R.L4o, R.L4i, a0, a1), fill:'#3BA7D9', stroke:'#00000030' }));
+    addText(blueWrap, (R.L4o+R.L4i)/2, mid, String(blueDigits[i]), {fill:'#0a2a33', attrs:{'font-size':'13'}});
+  }
+  // opaque black base for the disk's center (so nothing shows through except the true hole)
+  blueWrap.appendChild(makeEl('circle', {cx:0,cy:0,r:R.L4i, fill:'#111'}));
+
+  // the hole polygon, positioned/rotated to match the card
+  const holePts = HOLE_LOCAL.map(([x,y]) => rotatePoint(x,y,CARD.rot,CARD.cx,CARD.cy));
+  const holePointsAttr = holePts.map(p => p.join(',')).join(' ');
+
+  // mask: everything visible, except the hole polygon (which is punched transparent)
+  const maskId = 'blueCardHoleMask';
+  const mask = makeEl('mask', {id:maskId, maskUnits:'userSpaceOnUse', x:-400, y:-400, width:800, height:800});
+  mask.appendChild(makeEl('rect', {x:-400, y:-400, width:800, height:800, fill:'#fff'}));
+  mask.appendChild(makeEl('polygon', {points: holePointsAttr, fill:'#000'}));
+  blueWrap.appendChild(mask);
+
+  // the card itself (thin white backing + gold body), masked by the hole above
+  const cardMasked = makeEl('g', {mask:`url(#${maskId})`});
+  const cardOuter = makeEl('rect', {
+    x:-CARD.w/2-3, y:-CARD.h/2-3, width:CARD.w+6, height:CARD.h+6, rx:CARD.w*0.16,
+    fill:'#fbf7ec', stroke:'#d8cead', 'stroke-width':1,
+    transform:`translate(${CARD.cx},${CARD.cy}) rotate(${CARD.rot})`
+  });
+  const cardGold = makeEl('rect', {
+    x:-CARD.w/2, y:-CARD.h/2, width:CARD.w, height:CARD.h, rx:CARD.w*0.14,
+    fill:'#c08a2e',
+    transform:`translate(${CARD.cx},${CARD.cy}) rotate(${CARD.rot})`
+  });
+  cardMasked.appendChild(cardOuter);
+  cardMasked.appendChild(cardGold);
+  blueWrap.appendChild(cardMasked);
+
+  // thin dark outline right at the true hole edge, like the painted trim in the photo
+  blueWrap.appendChild(makeEl('polygon', {points: holePointsAttr, fill:'none', stroke:'#8a5f1e', 'stroke-width':1.5}));
+
+  // reveal picture: hidden by default, shown (via CSS) only when the code matches
+  const revealIcon = buildRevealIcon(holePts);
+  revealIcon.setAttribute('id', 'revealIcon');
+  revealIcon.style.opacity = '0';
+  blueWrap.appendChild(revealIcon);
+
+  blueWrap.appendChild(makeEl('circle',{cx:0,cy:0,r:8, fill:'#fff', stroke:'#999'}));
+  const blueHit = makeEl('path', {d: wedgePath(R.L4o, R.L4i, 0, 359.999), fill:'transparent'});
+  blueWrap.appendChild(blueHit);
+  svg.appendChild(blueWrap);
+
+  return { redWrap, redHit, whiteWrap, whiteHit, blueWrap, blueHit, revealIcon };
+}
+
+// A small celebratory icon (a key inside a burst of rays) drawn to fit inside
+// the hole polygon, shown only once the three dials match the set code.
+function buildRevealIcon(holePts){
+  const cx = (holePts[0][0]+holePts[1][0]+holePts[2][0])/3;
+  const cy = (holePts[0][1]+holePts[1][1]+holePts[2][1])/3 - 3;
+  const s = R.L4i*0.26;
+  const g = makeEl('g', {transform:`translate(${cx.toFixed(2)},${cy.toFixed(2)})`});
+  for(let i=0;i<8;i++){
+    const a = deg2rad(i*45);
+    const x1 = Math.cos(a)*s*0.9, y1 = Math.sin(a)*s*0.9;
+    const x2 = Math.cos(a)*s*1.6, y2 = Math.sin(a)*s*1.6;
+    g.appendChild(makeEl('line', {x1:x1.toFixed(2),y1:y1.toFixed(2),x2:x2.toFixed(2),y2:y2.toFixed(2), stroke:'#E3A868', 'stroke-width':2, 'stroke-linecap':'round'}));
+  }
+  g.appendChild(makeEl('circle', {cx:0, cy:0, r:s*0.55, fill:'#F4CE6B', stroke:'#8a5f1e', 'stroke-width':1.5}));
+  const keyStem = makeEl('rect', {x:-s*0.12, y:0, width:s*0.24, height:s*0.85, fill:'#8a5f1e', rx:2, transform:`translate(0,0)`});
+  g.appendChild(keyStem);
+  g.appendChild(makeEl('rect', {x:s*0.12, y:s*0.55, width:s*0.28, height:s*0.16, fill:'#8a5f1e'}));
+  g.appendChild(makeEl('rect', {x:s*0.12, y:s*0.8, width:s*0.22, height:s*0.14, fill:'#8a5f1e'}));
+  g.appendChild(makeEl('circle', {cx:0, cy:-s*0.05, r:s*0.16, fill:'none', stroke:'#8a5f1e', 'stroke-width':2}));
+  return g;
+}
+
+let refs = buildAll();
+
+function render(){
+  refs.redWrap.setAttribute('transform', `rotate(${rotation.red})`);
+  refs.whiteWrap.setAttribute('transform', `rotate(${rotation.white})`);
+  refs.blueWrap.setAttribute('transform', `rotate(${rotation.blue})`);
+  updateReadout();
+}
+render();
+
+function mod360(a){ return ((a % 360) + 360) % 360; }
+
+// Figures out what number is currently visible through the blue disk's window,
+// by checking each layer beneath it (white, then red, then the fixed black base)
+// at that world-space angle, using each layer's own current rotation.
+function computeVisibleNumber(){
+  const worldAngle = mod360(WINDOW_ANGLE + rotation.blue);
+
+  const whiteLocal = mod360(worldAngle - rotation.white);
+  const whiteIdx = Math.floor(whiteLocal / step) % N;
+  if(whiteInner[whiteIdx] !== null){
+    return { value: whiteInner[whiteIdx], source: '흰 원판' };
+  }
+
+  const redLocal = mod360(worldAngle - rotation.red);
+  const redIdx = Math.floor(redLocal / step) % N;
+  if(redInner[redIdx] !== null){
+    return { value: redInner[redIdx], source: '빨간 원판' };
+  }
+
+  const blackIdx = Math.floor(worldAngle / step) % N;
+  return { value: blackSegs[blackIdx].number, source: '검은 원판 (기준판)' };
+}
+
+// The digit each ring currently shows at the top reference mark (angle 0),
+// i.e. the number a person reading the dial like a combination lock would see.
+function getRingDigit(name, digitsArr){
+  const idx = Math.floor(mod360(-rotation[name]) / step) % N;
+  return digitsArr[idx];
+}
+
+function readCodeInputs(){
+  const w = parseInt(document.getElementById('codeWhite').value, 10);
+  const r = parseInt(document.getElementById('codeRed').value, 10);
+  const b = parseInt(document.getElementById('codeBlue').value, 10);
+  return { w, r, b };
+}
+
+function codeMatches(){
+  const target = readCodeInputs();
+  if(Number.isNaN(target.w) || Number.isNaN(target.r) || Number.isNaN(target.b)) return false;
+  return getRingDigit('white', whiteDigits) === target.w
+      && getRingDigit('red', redDigits) === target.r
+      && getRingDigit('blue', blueDigits) === target.b;
+}
+
+function updateReadout(){
+  const box = document.getElementById('readoutBox');
+  const labelEl = document.getElementById('readoutLabel');
+  const valueEl = document.getElementById('readoutValue');
+  const sourceEl = document.getElementById('readoutSource');
+
+  if(codeMatches()){
+    box.classList.add('unlocked');
+    labelEl.textContent = '정답 코드 일치!';
+    valueEl.textContent = '🎉 그림이 나타났어요';
+    sourceEl.textContent = '파란 창을 확인해보세요';
+    if(refs.revealIcon) refs.revealIcon.style.opacity = '1';
+  } else {
+    box.classList.remove('unlocked');
+    labelEl.textContent = '지금 파란 창에 보이는 숫자';
+    const result = computeVisibleNumber();
+    valueEl.textContent = result.value;
+    sourceEl.textContent = `${result.source}에서 보임`;
+    if(refs.revealIcon) refs.revealIcon.style.opacity = '0';
+  }
+}
+
+function rotateLayer(name, dir){
+  rotation[name] = (rotation[name] + dir*step + 3600) % 360;
+  render();
+}
+
+['codeWhite','codeRed','codeBlue'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateReadout);
+});
+
+document.querySelectorAll('.rotbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    rotateLayer(btn.dataset.layer, parseInt(btn.dataset.dir,10));
+  });
+});
+document.getElementById('resetAll').addEventListener('click', () => {
+  rotation.red = 0; rotation.white = 0; rotation.blue = 0;
+  render();
+});
+
+// drag to rotate
+function setupDragGeneric(name, hitEl){
+  let dragging = false;
+  let startAngle = 0;
+  let startRot = 0;
+  const svgRect = () => svg.getBoundingClientRect();
+
+  function angleFromEvent(evt){
+    const rect = svgRect();
+    const vbSize = 640; // viewBox width/height
+    const scale = vbSize / rect.width;
+    const px = (evt.clientX - rect.left) * scale - 320;
+    const py = (evt.clientY - rect.top) * scale - 320;
+    return Math.atan2(py, px) * 180 / Math.PI;
+  }
+
+  hitEl.style.cursor = 'grab';
+  hitEl.style.pointerEvents = 'all';
+
+  hitEl.addEventListener('pointerdown', (evt) => {
+    dragging = true;
+    hitEl.setPointerCapture(evt.pointerId);
+    startAngle = angleFromEvent(evt);
+    startRot = rotation[name];
+    hitEl.style.cursor = 'grabbing';
+  });
+  hitEl.addEventListener('pointermove', (evt) => {
+    if(!dragging) return;
+    const cur = angleFromEvent(evt);
+    let delta = cur - startAngle;
+    rotation[name] = ((startRot + delta) % 360 + 360) % 360;
+    render();
+  });
+  function endDrag(evt){
+    if(!dragging) return;
+    dragging = false;
+    hitEl.style.cursor = 'grab';
+    // snap to nearest step
+    rotation[name] = Math.round(rotation[name]/step)*step % 360;
+    render();
+  }
+  hitEl.addEventListener('pointerup', endDrag);
+  hitEl.addEventListener('pointercancel', endDrag);
+}
+setupDragGeneric('red', refs.redHit);
+setupDragGeneric('white', refs.whiteHit);
+setupDragGeneric('blue', refs.blueHit);
+</script>
+</body>
+</html>
