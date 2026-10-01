@@ -133,6 +133,7 @@
     <div class="fullimg">
       <img src="assets/3.jpg" id="desk1Img">
       <img src="assets/3.jpg" id="desk2Img" class="hidden">
+      <div class="hotspot" id="hsSafe" style="left:67.4%;top:17.3%;width:5%;height:5%;"></div>
     </div>
     <button class="btn" id="complete2" style="left:50%;bottom:24px;transform:translateX(-50%);">완료</button>
   </div>
@@ -143,6 +144,7 @@
     </div>
     <button class="btn top-right" id="rotateMag">180˚ 회전</button>
     <button class="btn bottom-left" id="complete3">완료</button>
+    <div class="hotspot" id="hsTriangle" style="left:43.9%;top:1.2%;width:13%;height:9%;"></div>
   </div>
 
   <div class="stage" id="p4">
@@ -454,14 +456,17 @@ const NARRATION_1 = [
 "여기 가만히 있을 수는 없습니다. 어떻게든 수수께끼를 풀어 이 문을 열고 나가야겠습니다."
 ];
 
-document.getElementById('complete2').onclick = ()=> openCodeModal(30, ()=>{
+function deskSuccess(){
   playDrawerSlide();
   document.getElementById('desk2Img').src = 'assets/desk2.jpg';
   document.getElementById('desk2Img').classList.remove('hidden');
   document.getElementById('desk1Img').classList.add('hidden');
   document.getElementById('complete2').classList.add('hidden');
+  document.getElementById('hsSafe').classList.add('hidden');
   setTimeout(()=>{ completePage(2); showPage(3); }, 5000);
-});
+}
+document.getElementById('complete2').onclick = ()=> openCodeModal(30, deskSuccess);
+document.getElementById('hsSafe').onclick = ()=> openCodeModal(937, deskSuccess);
 
 const mag = document.getElementById('magnifier');
 let magRot = 0;
@@ -490,6 +495,7 @@ document.getElementById('rotateMag').onclick = ()=>{
   el.addEventListener('pointerup', ()=>{ dragging=false; el.classList.remove('dragging'); });
 })(mag, document.getElementById('qrWrap'));
 document.getElementById('complete3').onclick = ()=> openCodeModal(6, ()=>{ playSafeHum(); completePage(3); showPage(4); });
+document.getElementById('hsTriangle').onclick = ()=> openCodeModal(937, ()=> showPage(2));
 
 const NARRATION_4 = [
 "천천히 통로를 따라 움직입니다. 짙게 내려앉은 어둠 외에는 아무것도 없습니다.",
