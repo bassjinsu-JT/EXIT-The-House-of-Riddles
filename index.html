@@ -90,6 +90,7 @@
   #navbar button{ background:#2a2d35; color:#eee; border:1px solid #444; padding:6px 16px; border-radius:5px; cursor:pointer; }
   #navbar button:disabled{opacity:.3; cursor:not-allowed;}
 
+  #blackTransition{ position:fixed; inset:0; background:#000; display:none; z-index:95; }
   #modalOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.65); display:none; align-items:center; justify-content:center; z-index:50; }
   #modalOverlay.show{display:flex;}
   #modalBox{ background:#20232a; padding:30px 34px; border-radius:10px; text-align:center; color:#f0f0f0; min-width:280px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
@@ -202,6 +203,8 @@
 
 </div>
 
+<div id="blackTransition"></div>
+
 <div id="navbar">
   <button id="prevBtn">◀ 이전</button>
   <span id="pageLabel">1 / 11</span>
@@ -234,6 +237,11 @@ function showPage(idx){
   updateNav();
   if(idx===1){ startNarration('narrationBox1', NARRATION_1); playBgOnce(); }
   else { pauseBg(); }
+  if(idx===2){
+    const overlay = document.getElementById('blackTransition');
+    overlay.style.display = 'block';
+    setTimeout(()=>{ overlay.style.display = 'none'; }, 3000);
+  }
   if(idx===4){ startNarration('narrationBox4', NARRATION_4); }
 }
 function updateNav(){
