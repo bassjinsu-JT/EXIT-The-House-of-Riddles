@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수수께끼의 집 - 괴기스러운 엔딩</title>
+  
+  <!-- 괴기스러운 구글 폰트 적용 (Creepster, East Sea Dokdo, Yeon Sung) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=East+Sea+Dokdo&family=Nanum+Myeongjo:wght@700;800&family=Yeon+Sung&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background-color: #030204;
+      color: #e0d8d8;
+      width: 1024px;
+      height: 600px;
+      margin: 0 auto;
+      overflow: hidden;
+      font-family: 'East Sea Dokdo', cursive;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 암울하고 괴기스러운 미스터리 저택 배경 */
+    .bg-mansion {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 50% 50%, rgba(138, 3, 3, 0.25) 0%, rgba(15, 3, 8, 0.9) 70%, rgba(0, 0, 0, 0.98) 100%),
+        linear-gradient(135deg, #120203 0%, #080104 50%, #000000 100%);
+      z-index: 1;
+    }
+
+    /* 섬뜩한 핏빛 글로우 연출 */
+    .ambient-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1024px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(180, 0, 0, 0.18) 0%, rgba(80, 0, 30, 0.1) 50%, transparent 80%);
+      filter: blur(25px);
+      z-index: 2;
+      animation: pulseEerie 4s infinite alternate ease-in-out;
+    }
+
+    /* 괴기스러운 기운 파티클 */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 3;
+      background-image: 
+        radial-gradient(2px 2px at 30px 40px, #a00000, rgba(0,0,0,0)),
+        radial-gradient(3px 3px at 80px 120px, #500000, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 150px 60px, #ff1a1a, rgba(0,0,0,0));
+      background-repeat: repeat;
+      background-size: 180px 180px;
+      animation: floatParticles 15s linear infinite;
+      opacity: 0.7;
+    }
+
+    /* 어두운 비네팅 */
+    .vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.95);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* 시작 오버레이 */
+    .start-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1024px;
+      height: 600px;
+      background: rgba(4, 1, 4, 0.96);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      cursor: pointer;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .start-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .start-badge {
+      font-family: 'Creepster', cursive;
+      font-size: 2.2rem;
+      color: #ff1a1a;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px #ff0000;
+      margin-bottom: 10px;
+    }
+
+    .start-title {
+      font-family: 'East Sea Dokdo', cursive;
+      font-size: 3.8rem;
+      color: #f1faee;
+      text-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 40px #800000;
+      margin-bottom: 25px;
+      animation: glitchText 3s infinite;
+    }
+
+    .start-button {
+      border: 2px solid #800000;
+      padding: 12px 45px;
+      color: #ffcccc;
+      font-family: 'East Sea Dokdo', cursive;
+      font-size: 2.4rem;
+      background: linear-gradient(180deg, #400000 0%, #1a0000 100%);
+      border-radius: 8px;
+      box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .start-button:hover {
+      transform: scale(1.05);
+      background: #800000;
+      color: #ffffff;
+      box-shadow: 0 0 35px rgba(255, 0, 0, 0.8);
+    }
+
+    /* 자막 스크롤 영역 */
+    .credits-window {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 820px;
+      height: 600px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .credits-container {
+      position: absolute;
+      width: 100%;
+      top: 100%;
+      left: 0;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .credits-container.animate {
+      animation: scrollUp 48s linear forwards;
+    }
+
+    /* 괴기스러운 자막 본문 스타일 */
+    .paragraph {
+      font-family: 'East Sea Dokdo', cursive;
+      font-size: 2.5rem;
+      line-height: 1.6;
+      color: #d6c7c7;
+      margin-bottom: 70px;
+      text-shadow: 0 0 10px rgba(255, 0, 0, 0.5), 2px 2px 4px #000000;
+      word-break: keep-all;
+      width: 100%;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    /* 괴기스러운 소피아 대화문 스타일 */
+    .dialogue {
+      font-family: 'East Sea Dokdo', cursive;
+      font-size: 2.8rem;
+      color: #ff4d4d;
+      line-height: 1.5;
+      background: rgba(30, 0, 5, 0.85);
+      border-left: 4px solid #cc0000;
+      border-right: 4px solid #cc0000;
+      padding: 20px 30px;
+      border-radius: 6px;
+      margin-bottom: 70px;
+      text-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 0 0 30px #800000;
+      box-shadow: 0 0 25px rgba(100, 0, 0, 0.7);
+    }
+
+    /* 탈출 성공 / 보상 타이틀 */
+    .success-box {
+      margin-bottom: 70px;
+      width: 100%;
+    }
+
+    .success-title {
+      font-family: 'East Sea Dokdo', cursive;
+      font-size: 3.4rem;
+      color: #00ffaa;
+      text-shadow: 0 0 18px rgba(0, 255, 170, 0.7), 0 0 30px #005533;
+      margin-bottom: 15px;
+      line-height: 1.3;
+    }
+
+    .reward-text {
+      font-family: 'East Sea Dokdo', cursive;
+      font-size: 2.9rem;
+      color: #ff3366;
+      text-shadow: 0 0 18px rgba(255, 51, 102, 0.8);
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    .reward-highlight {
+      display: inline-block;
+      background: #800020;
+      color: #ffffff;
+      padding: 2px 16px;
+      border-radius: 6px;
+      border: 1px solid #ff0055;
+      transform: rotate(-1deg);
+      margin: 0 6px;
+      text-shadow: 0 0 10px #ff0055;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      text-shadow: 0 0 12px rgba(255, 204, 0, 0.8);
+    }
+
+    /* UI 조작 버튼 */
+    .ui-controls {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      z-index: 50;
+      display: flex;
+      gap: 10px;
+      opacity: 0.5;
+      transition: opacity 0.3s ease;
+    }
+
+    .ui-controls:hover {
+      opacity: 1;
+    }
+
+    .btn {
+      background: rgba(20, 0, 5, 0.9);
+      border: 1px solid #800000;
+      color: #ff9999;
+      font-family: 'East Sea Dokdo', cursive;
+      padding: 4px 16px;
+      font-size: 1.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: #800000;
+      color: #ffffff;
+      box-shadow: 0 0 12px #ff0000;
+    }
+
+    /* 애니메이션 Keyframes */
+    @keyframes scrollUp {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-100%); }
+    }
+
+    @keyframes pulseEerie {
+      0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.96); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    }
+
+    @keyframes floatParticles {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 -600px; }
+    }
+
+    @keyframes glitchText {
+      0%, 100% { transform: skewX(0deg); }
+      92% { transform: skewX(0deg); }
+      94% { transform: skewX(-5deg) scaleY(1.05); }
+      96% { transform: skewX(5deg); }
+      98% { transform: skewX(-2deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-mansion"></div>
+  <div class="ambient-glow"></div>
+  <div class="particles"></div>
+  <div class="vignette"></div>
+
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-badge">MISSION COMPLETE</div>
+    <div class="start-title">수수께끼의 집 탈출 성공...</div>
+    <div class="start-button">🩸 엔딩 스토리 보기</div>
+  </div>
+
+  <audio id="bgAudio" loop preload="auto">
+    <source src="수수께끼의집.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="credits-window">
+    <div class="credits-container" id="creditsContainer">
+      
+      <div class="paragraph">
+        레이저 광선이 사라졌습니다.<br>
+        조심스레 문을 통과합니다.<br>
+        <span class="highlight-yellow">“해냈군요! 축하해요!”</span><br>
+        갑자기 나타난 소피아가 말을 건넵니다.
+      </div>
+
+      <div class="paragraph">
+        설마 설마 했던 일이 사실로 드러났습니다.<br>
+        탐정들은 기다리는 동안 소파에 앉아<br>
+        인기 탐정 드라마를 시청하고 있었던 것 같습니다.
+      </div>
+
+      <div class="dialogue">
+        “많이 놀랐나요? 우리가 만든<br>
+        수수께끼의 집을 테스트해보고 싶었어요.<br>
+        당신이 아주 적합한 인재라고 생각했죠!<br>
+        정말 수고 많았어요. 함께 <span style="color: #ff0055;">🍒 체리 파이</span>를 먹으며,<br>
+        못다 한 이야기를 나누죠.”
+      </div>
+
+      <div class="success-box">
+        <div class="success-title">
+          여러분은 ‘수수께끼의 집’을<br>무사히 탈출했습니다!
+        </div>
+        <div class="reward-text">
+          정말 잘했습니다! 보상으로,<br>
+          <span class="reward-highlight">🎁 정보쌤의 뽑기!</span>에 도전해 보세요.
+        </div>
+      </div>
+
+      <div class="paragraph" style="font-size: 3.0rem; color: #ffcc00; font-family: 'East Sea Dokdo', cursive;">
+        다시 한번, 정말 고생했습니다! 👏
+      </div>
+
+    </div>
+  </div>
+
+  <div class="ui-controls">
+    <button class="btn" id="replayBtn">다시 보기</button>
+    <button class="btn" id="muteBtn">음소거</button>
+  </div>
+
+  <script>
+    const startOverlay = document.getElementById('startOverlay');
+    const creditsContainer = document.getElementById('creditsContainer');
+    const bgAudio = document.getElementById('bgAudio');
+    const replayBtn = document.getElementById('replayBtn');
+    const muteBtn = document.getElementById('muteBtn');
+
+    function startEnding() {
+      startOverlay.classList.add('hidden');
+      
+      bgAudio.currentTime = 0;
+      bgAudio.play().catch(err => {
+        console.warn("오디오 자동재생 차단됨:", err);
+      });
+
+      creditsContainer.classList.remove('animate');
+      void creditsContainer.offsetWidth; 
+      creditsContainer.classList.add('animate');
+    }
+
+    startOverlay.addEventListener('click', startEnding);
+
+    replayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startEnding();
+    });
+
+    muteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bgAudio.muted = !bgAudio.muted;
+      muteBtn.textContent = bgAudio.muted ? '소리 켜기' : '음소거';
+    });
+  </script>
+</body>
+</html>
